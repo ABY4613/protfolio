@@ -4,9 +4,9 @@ import 'package:portfolio/main.dart';
 void main() {
   testWidgets('Portfolio smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const PortfolioApp());
+    await tester.pumpWidget(const DataBoardApp());
 
-    // Verify that the name ABY BABU exists.
-    expect(find.text('ABY BABU'), findsOneWidget);
+    // Verify that the name Justin exists.
+    expect(find.text('JUSTIN JOJI MATHEW'), findsOneWidget);
   });
 }
