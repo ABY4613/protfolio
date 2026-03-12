@@ -1,1444 +1,1861 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:fl_chart/fl_chart.dart';
-import 'package:lottie/lottie.dart';
-import 'dart:ui';
 
-void main() => runApp(const DataBoardApp());
+void main() {
+  runApp(const PortfolioApp());
+}
 
-final ValueNotifier<bool> isDarkTheme = ValueNotifier(true);
-
-class DataBoardApp extends StatelessWidget {
-  const DataBoardApp({super.key});
+class PortfolioApp extends StatelessWidget {
+  const PortfolioApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<bool>(
-      valueListenable: isDarkTheme,
-      builder: (context, isDark, child) {
-        final darkBg = const Color(0xFF070B14);
-        final lightBg = const Color(0xFFF1F5F9);
-        final primaryColor = isDark
-            ? Colors.cyanAccent.shade400
-            : Colors.indigo.shade600;
-        final surfaceColor = isDark
-            ? Colors.white.withOpacity(0.05)
-            : Colors.black.withOpacity(0.05);
-
-        return MaterialApp(
-          title: 'Justin Joji Mathew | Data Analytics',
-          debugShowCheckedModeBanner: false,
-          theme: ThemeData(
-            brightness: isDark ? Brightness.dark : Brightness.light,
-            scaffoldBackgroundColor: isDark ? darkBg : lightBg,
-            primaryColor: primaryColor,
-            colorScheme:
-                (isDark ? const ColorScheme.dark() : const ColorScheme.light())
-                    .copyWith(
-                      primary: primaryColor,
-                      secondary: Colors.deepPurpleAccent,
-                      surface: surfaceColor,
-                    ),
-            textTheme: GoogleFonts.outfitTextTheme(
-              isDark ? ThemeData.dark().textTheme : ThemeData.light().textTheme,
-            ),
-            useMaterial3: true,
-          ),
-          home: const CursorWrapper(child: GlassmorphismDashboard()),
-        );
-      },
-    );
-  }
-}
-
-// ----------------------------------------------------
-// SLEEK FLUID CURSOR
-// ----------------------------------------------------
-class CursorWrapper extends StatefulWidget {
-  final Widget child;
-  const CursorWrapper({super.key, required this.child});
-
-  @override
-  State<CursorWrapper> createState() => _CursorWrapperState();
-}
-
-class _CursorWrapperState extends State<CursorWrapper>
-    with SingleTickerProviderStateMixin {
-  Offset _mousePos = const Offset(-200, -200);
-  Offset _trailingPos = const Offset(-200, -200);
-  late Ticker _ticker;
-
-  @override
-  void initState() {
-    super.initState();
-    _ticker = createTicker((elapsed) {
-      if (_mousePos.dx != -200) {
-        setState(() {
-          _trailingPos = Offset.lerp(_trailingPos, _mousePos, 0.2) ?? _mousePos;
-        });
-      }
-    });
-    _ticker.start();
-  }
-
-  @override
-  void dispose() {
-    _ticker.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    bool isMobile = MediaQuery.of(context).size.width < 900;
-    if (isMobile) return widget.child;
-
-    return ValueListenableBuilder<bool>(
-      valueListenable: isDarkTheme,
-      builder: (context, isDark, child) {
-        return MouseRegion(
-          cursor: SystemMouseCursors.none,
-          onHover: (e) => setState(() => _mousePos = e.position),
-          onExit: (e) => setState(() => _mousePos = const Offset(-200, -200)),
-          child: Stack(
-            children: [
-              widget.child,
-              // Trailing Cursor
-              AnimatedPositioned(
-                duration: Duration.zero,
-                left: _trailingPos.dx - 20,
-                top: _trailingPos.dy - 20,
-                child: IgnorePointer(
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Theme.of(context).primaryColor.withOpacity(0.5),
-                        width: 1.5,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Theme.of(
-                            context,
-                          ).primaryColor.withOpacity(0.1),
-                          blurRadius: 20,
-                          spreadRadius: 10,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              // Main Dot
-              AnimatedPositioned(
-                duration: Duration.zero,
-                left: _mousePos.dx - 4,
-                top: _mousePos.dy - 4,
-                child: IgnorePointer(
-                  child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Theme.of(context).primaryColor,
-                          blurRadius: 8,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
-
-// ----------------------------------------------------
-// DYNAMIC GLASSMORPHISM BACKGROUND & LAYOUT
-// ----------------------------------------------------
-class GlassmorphismDashboard extends StatelessWidget {
-  const GlassmorphismDashboard({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    bool isMobile = MediaQuery.of(context).size.width < 900;
-
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      drawer: isMobile ? const Drawer(child: SidebarContent()) : null,
-      appBar: isMobile
-          ? AppBar(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              iconTheme: IconThemeData(
-                color: Theme.of(context).textTheme.bodyLarge?.color,
-              ),
-            )
-          : null,
-      body: Stack(
-        children: [
-          // Moving Blobs
-          const BackgroundBlobs(),
-          // Glass Filter
-          Positioned.fill(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 80, sigmaY: 80),
-              child: Container(
-                color: Theme.of(
-                  context,
-                ).scaffoldBackgroundColor.withOpacity(0.5),
-              ),
-            ),
-          ),
-
-          Row(
-            children: [
-              if (!isMobile) const SidebarContainer(),
-              const Expanded(child: ResponsiveContent()),
-            ],
-          ),
-
-          // Natural Hanging Rope Bulb
-          if (!isMobile)
-            const Positioned(top: 0, right: 60, child: PhysicsPullSwitch()),
-        ],
-      ),
-    );
-  }
-}
-
-// ----------------------------------------------------
-// PHYSICS-BASED ROPE SWITCH
-// ----------------------------------------------------
-class PhysicsPullSwitch extends StatefulWidget {
-  const PhysicsPullSwitch({super.key});
-  @override
-  State<PhysicsPullSwitch> createState() => _PhysicsPullSwitchState();
-}
-
-class _PhysicsPullSwitchState extends State<PhysicsPullSwitch>
-    with SingleTickerProviderStateMixin {
-  double pullDistance = 0.0;
-  bool isDragging = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return ValueListenableBuilder<bool>(
-      valueListenable: isDarkTheme,
-      builder: (context, isDark, child) {
-        double maxPull = 120;
-
-        return GestureDetector(
-          onVerticalDragStart: (_) => setState(() => isDragging = true),
-          onVerticalDragUpdate: (details) {
-            setState(() {
-              pullDistance += details.delta.dy;
-              if (pullDistance < 0) pullDistance = 0;
-              if (pullDistance > maxPull) pullDistance = maxPull;
-            });
-          },
-          onVerticalDragEnd: (details) {
-            if (pullDistance > maxPull * 0.7) {
-              isDarkTheme.value = !isDarkTheme.value;
-            }
-            setState(() {
-              isDragging = false;
-              pullDistance = 0;
-            });
-          },
-          child: TweenAnimationBuilder<double>(
-            tween: Tween(begin: pullDistance, end: pullDistance),
-            duration: isDragging
-                ? Duration.zero
-                : const Duration(milliseconds: 800),
-            curve: Curves.elasticOut,
-            builder: (context, value, child) {
-              return Stack(
-                alignment: Alignment.topCenter,
-                children: [
-                  // Actual drawn rope
-                  Container(
-                    width: 4,
-                    height: 80 + (isDragging ? value * 0.8 : value * 0.5),
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? Colors.grey.shade700
-                          : Colors.grey.shade400,
-                      borderRadius: BorderRadius.circular(2),
-                      boxShadow: [
-                        BoxShadow(color: Colors.black12, blurRadius: 4),
-                      ],
-                    ),
-                  ),
-                  Positioned(
-                    top: 80 + (isDragging ? value * 0.8 : value * 0.5) - 10,
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: isDark ? Colors.grey.shade800 : Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: isDark
-                                ? Colors.cyanAccent.withOpacity(0.5)
-                                : Colors.orangeAccent.withOpacity(0.5),
-                            blurRadius: isDark ? 20 : 30,
-                            spreadRadius: isDark ? 5 : 10,
-                          ),
-                        ],
-                      ),
-                      child: Icon(
-                        isDark
-                            ? Icons.wb_incandescent_outlined
-                            : Icons.wb_incandescent,
-                        size: 32,
-                        color: isDark ? Colors.cyanAccent : Colors.orangeAccent,
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
-        );
-      },
-    );
-  }
-}
-
-// ----------------------------------------------------
-// ABSTRACT BACKGROUND BLOBS
-// ----------------------------------------------------
-class BackgroundBlobs extends StatefulWidget {
-  const BackgroundBlobs({super.key});
-  @override
-  State<BackgroundBlobs> createState() => _BackgroundBlobsState();
-}
-
-class _BackgroundBlobsState extends State<BackgroundBlobs>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 15),
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        final val = _controller.value;
-        return Stack(
-          children: [
-            Positioned(
-              left: -100 + val * 200,
-              top: 100 + val * 100,
-              child: _blob(Theme.of(context).primaryColor, 400),
-            ),
-            Positioned(
-              right: -50 - val * 150,
-              bottom: 200 - val * 100,
-              child: _blob(Theme.of(context).colorScheme.secondary, 500),
-            ),
-            Positioned(
-              left: 300 + val * 300,
-              bottom: -100 + val * 200,
-              child: _blob(Colors.deepPurple, 300),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _blob(Color c, double size) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: c.withOpacity(0.3),
-      ),
-    );
-  }
-}
-
-// ----------------------------------------------------
-// SIDEBAR
-// ----------------------------------------------------
-class SidebarContainer extends StatelessWidget {
-  const SidebarContainer({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 280,
-      margin: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: Colors.white.withOpacity(0.1), width: 1.5),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 20)],
-      ),
-      child: const ClipRRect(
-        borderRadius: BorderRadius.all(Radius.circular(30)),
-        child: SidebarContent(),
-      ),
-    );
-  }
-}
-
-class SidebarContent extends StatelessWidget {
-  const SidebarContent({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
-      child: Column(
-        children: [
-          // Lottie Avatar Integration replacing NetworkImage for a tech feel
-          Container(
-            height: 120,
-            width: 120,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: theme.scaffoldBackgroundColor,
-              border: Border.all(color: theme.primaryColor, width: 3),
-              boxShadow: [
-                BoxShadow(
-                  color: theme.primaryColor.withOpacity(0.4),
-                  blurRadius: 20,
-                  spreadRadius: 5,
-                ),
-              ],
-            ),
-            child: ClipOval(
-              child: Lottie.network(
-                'https://lottie.host/80404da6-27ab-4971-bfbd-b203cba26002/mH3nFv8hP8.json',
-                fit: BoxFit.cover,
-                errorBuilder: (context, obj, stack) => Icon(
-                  Icons.data_exploration,
-                  size: 60,
-                  color: theme.primaryColor,
-                ),
-              ),
-            ),
-          ).animate().scale(duration: 800.ms, curve: Curves.elasticOut),
-
-          const SizedBox(height: 24),
-          Text(
-            'JUSTIN JOJI',
-            style: GoogleFonts.outfit(
-              fontSize: 26,
-              fontWeight: FontWeight.bold,
-              letterSpacing: -1,
-            ),
-          ),
-          Text(
-            'MATHEW',
-            style: GoogleFonts.outfit(
-              fontSize: 26,
-              fontWeight: FontWeight.bold,
-              height: 0.9,
-              color: theme.primaryColor,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            decoration: BoxDecoration(
-              color: theme.primaryColor.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: theme.primaryColor.withOpacity(0.5)),
-            ),
-            child: Text(
-              'DATA ANALYST',
-              style: TextStyle(
-                color: theme.primaryColor,
-                fontSize: 11,
-                fontWeight: FontWeight.w900,
+    return MaterialApp(
+      title: 'Aby Babu | Flutter Developer',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData.dark().copyWith(
+        scaffoldBackgroundColor: const Color(0xFF000000),
+        primaryColor: const Color(0xFFFF0031), // Nothing Red
+        colorScheme: const ColorScheme.dark(
+          primary: Color(0xFFFF0031),
+          secondary: Color(0xFFFF0031),
+          surface: Color(0xFF111111),
+        ),
+        textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme)
+            .copyWith(
+              displayLarge: GoogleFonts.silkscreen(
+                fontSize: 48,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
                 letterSpacing: 2,
               ),
+              displayMedium: GoogleFonts.silkscreen(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+              bodyLarge: GoogleFonts.inter(fontSize: 18, color: Colors.white70),
             ),
-          ),
-          const SizedBox(height: 40),
-          _infoTile(Icons.location_on_rounded, 'Pathanamthitta, Kerala', theme),
-          const SizedBox(height: 16),
-          _infoTile(
-            Icons.mail_rounded,
-            'justinjoji251@gmail.com',
-            theme,
-            'mailto:justinjoji251@gmail.com',
-          ),
-          const SizedBox(height: 16),
-          _infoTile(
-            Icons.phone_rounded,
-            '+91 8078824372',
-            theme,
-            'tel:+918078824372',
-          ),
-          const Spacer(),
-          // Social Links
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _socialNode(
-                FontAwesomeIcons.github,
-                'https://github.com/Justin-Joji',
-                theme,
-              ),
-              const SizedBox(width: 20),
-              _socialNode(
-                FontAwesomeIcons.linkedinIn,
-                'https://linkedin.com/in/justin-joji-mathew',
-                theme,
-              ),
-            ],
-          ),
-        ],
       ),
+      home: const PortfolioHomePage(),
     );
   }
+}
 
-  Widget _infoTile(IconData icon, String text, ThemeData theme, [String? url]) {
-    return InkWell(
-      onTap: url != null ? () => launchUrl(Uri.parse(url)) : null,
-      hoverColor: Colors.transparent,
-      child: Row(
-        children: [
-          Container(
+class HoverInvert extends StatefulWidget {
+  final Widget Function(BuildContext context, bool isHovered, Color color)
+  builder;
+  final Color baseColor;
+  final Color invertColor;
+
+  const HoverInvert({
+    super.key,
+    required this.builder,
+    this.baseColor = Colors.white,
+    this.invertColor = const Color(0xFFFF0031),
+  });
+
+  @override
+  State<HoverInvert> createState() => _HoverInvertState();
+}
+
+class _HoverInvertState extends State<HoverInvert> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    Color currentColor = _isHovered
+        ? (widget.baseColor == const Color(0xFFFF0031)
+              ? Colors.white
+              : widget.invertColor)
+        : widget.baseColor;
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      cursor: SystemMouseCursors.click,
+      child: widget.builder(context, _isHovered, currentColor),
+    );
+  }
+}
+
+class ChargerCursor extends StatelessWidget {
+  final Offset position;
+  const ChargerCursor({super.key, required this.position});
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      left: position.dx,
+      top: position.dy,
+      child: IgnorePointer(
+        child: RepaintBoundary(
+          child: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: theme.primaryColor.withOpacity(0.1),
+              color: const Color(0xFFFF0031).withOpacity(0.2),
               shape: BoxShape.circle,
+              border: Border.all(color: const Color(0xFFFF0031), width: 1.5),
             ),
-            child: Icon(icon, size: 16, color: theme.primaryColor),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              text,
-              style: TextStyle(
-                fontSize: 13,
-                height: 1.4,
-                color: theme.textTheme.bodyMedium?.color?.withOpacity(0.8),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _socialNode(dynamic icon, String url, ThemeData theme) {
-    return StatefulBuilder(
-      builder: (context, setState) {
-        bool isHovered = false;
-        return MouseRegion(
-          onEnter: (_) => setState(() => isHovered = true),
-          onExit: (_) => setState(() => isHovered = false),
-          child: GestureDetector(
-            onTap: () => launchUrl(Uri.parse(url)),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: isHovered
-                    ? theme.primaryColor
-                    : theme.colorScheme.surface,
-                shape: BoxShape.circle,
-                border: Border.all(color: theme.primaryColor.withOpacity(0.5)),
-                boxShadow: isHovered
-                    ? [
-                        BoxShadow(
-                          color: theme.primaryColor.withOpacity(0.5),
-                          blurRadius: 15,
-                        ),
-                      ]
-                    : [],
-              ),
-              child: FaIcon(
-                icon,
-                size: 20,
-                color: isHovered
-                    ? (theme.brightness == Brightness.dark
-                          ? Colors.black
-                          : Colors.white)
-                    : theme.primaryColor,
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-// ----------------------------------------------------
-// MAIN DASHBOARD CONTENT SCROLL
-// ----------------------------------------------------
-class ResponsiveContent extends StatelessWidget {
-  const ResponsiveContent({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    bool isMobile = MediaQuery.of(context).size.width < 900;
-
-    return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
-      padding: EdgeInsets.fromLTRB(
-        isMobile ? 20 : 40,
-        isMobile ? 80 : 40,
-        isMobile ? 20 : 60,
-        40,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'ANALYTICS HQ',
-            style: GoogleFonts.outfit(
-              fontSize: 48,
-              fontWeight: FontWeight.w900,
-              letterSpacing: -2,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            'Detail-oriented and analytical Data Analyst focused on transforming complex data into actionable, automated insights.',
-            style: TextStyle(
-              fontSize: 16,
-              height: 1.5,
-              color: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.color?.withOpacity(0.7),
-            ),
-          ),
-
-          const SizedBox(height: 60),
-          _sectionTitle('Core Analytics Metrics'),
-          const MetricsGlassGrid(),
-
-          const SizedBox(height: 60),
-          _sectionTitle('Tool Proficiency & Workflow'),
-          if (isMobile) ...[
-            const SkillsRadarChart(),
-            const SizedBox(height: 20),
-            const PulseActivityChart(),
-          ] else
-            Row(
+            child: const Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                const Expanded(child: SkillsRadarChart()),
-                const SizedBox(width: 30),
-                const Expanded(flex: 2, child: PulseActivityChart()),
+                Icon(Icons.cable_rounded, size: 20, color: Color(0xFFFF0031)),
+                Icon(Icons.bolt_rounded, size: 10, color: Colors.white),
               ],
             ),
-
-          const SizedBox(height: 80),
-          _sectionTitle('High-Impact Projects'),
-          const ImageProjectsGrid(),
-
-          const SizedBox(height: 80),
-          _sectionTitle('Experience & Credentials'),
-          if (isMobile) ...[
-            const FancyTimelineFeed(),
-          ] else
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Expanded(flex: 3, child: FancyTimelineFeed()),
-                const SizedBox(width: 40),
-                Expanded(
-                  flex: 2,
-                  child: Container(
-                    padding: const EdgeInsets.all(30),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: Colors.white.withOpacity(0.05)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Icon(
-                          Icons.school_rounded,
-                          size: 40,
-                          color: Colors.blueAccent,
-                        ),
-                        const SizedBox(height: 20),
-                        Text(
-                          'EDUCATION',
-                          style: GoogleFonts.outfit(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        const Text(
-                          'B.Tech Computer Science\nMusaliar College of Engineering & Tech\n2021 – 2025',
-                          style: TextStyle(height: 1.6),
-                        ),
-                        const Divider(height: 40, color: Colors.white24),
-                        const Icon(
-                          Icons.workspace_premium_rounded,
-                          size: 40,
-                          color: Colors.amber,
-                        ),
-                        const SizedBox(height: 20),
-                        Text(
-                          'CERTIFICATIONS',
-                          style: GoogleFonts.outfit(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        const Text(
-                          'IBM Introduction to Data Analytics\nCoursera • Feb 2026',
-                          style: TextStyle(height: 1.6),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-          const SizedBox(height: 100),
-        ],
-      ).animate().fadeIn(duration: 800.ms).slideY(begin: 0.1, end: 0, curve: Curves.easeOutCubic),
-    );
-  }
-
-  Widget _sectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 24),
-      child: Text(
-        title,
-        style: GoogleFonts.outfit(
-          fontSize: 22,
-          fontWeight: FontWeight.bold,
-          letterSpacing: -0.5,
+          ),
         ),
       ),
     );
   }
 }
 
-// ----------------------------------------------------
-// BEAUTIFUL GLASS GRID METRICS
-// ----------------------------------------------------
-class MetricsGlassGrid extends StatelessWidget {
-  const MetricsGlassGrid({super.key});
+class PortfolioHomePage extends StatefulWidget {
+  const PortfolioHomePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final metrics = [
-      {
-        'title': 'TOTAL PORTFOLIOS',
-        'val': '5+',
-        'icon': Icons.folder_copy_rounded,
-        'color': Colors.blueAccent,
-      },
-      {
-        'title': 'DATA SETS MINED',
-        'val': '20M+',
-        'icon': Icons.storage_rounded,
-        'color': Colors.cyanAccent,
-      },
-      {
-        'title': 'DASHBOARDS',
-        'val': '12',
-        'icon': Icons.dashboard_rounded,
-        'color': Colors.purpleAccent,
-      },
-      {
-        'title': 'QUERIES WRITTEN',
-        'val': '10k+',
-        'icon': Icons.terminal_rounded,
-        'color': Colors.greenAccent,
-      },
-    ];
-    bool isMobile = MediaQuery.of(context).size.width < 700;
-
-    return Wrap(
-      spacing: 20,
-      runSpacing: 20,
-      children: metrics.map((m) {
-        return Container(
-          width: isMobile
-              ? double.infinity
-              : (MediaQuery.of(context).size.width - 320 - 80 - 60) / 4,
-          constraints: const BoxConstraints(minWidth: 160),
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.white.withOpacity(0.05)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: (m['color'] as Color).withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  m['icon'] as IconData,
-                  color: m['color'] as Color,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                m['val'] as String,
-                style: GoogleFonts.outfit(
-                  fontSize: 36,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              Text(
-                m['title'] as String,
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1,
-                  color: Colors.grey.shade500,
-                ),
-              ),
-            ],
-          ),
-        );
-      }).toList(),
-    );
-  }
+  State<PortfolioHomePage> createState() => _PortfolioHomePageState();
 }
 
-// ----------------------------------------------------
-// ANIMATED SKILLS CHART
-// ----------------------------------------------------
-class SkillsRadarChart extends StatelessWidget {
-  const SkillsRadarChart({super.key});
+class _PortfolioHomePageState extends State<PortfolioHomePage> {
+  final ScrollController _scrollController = ScrollController();
+  final GlobalKey _homeKey = GlobalKey();
+  final GlobalKey _experienceKey = GlobalKey();
+  final GlobalKey _skillsKey = GlobalKey();
+  final GlobalKey _projectsKey = GlobalKey();
+  final GlobalKey _contactKey = GlobalKey();
+
+  int _currentIndex = 0;
+  final ValueNotifier<Offset> _mousePosition = ValueNotifier(Offset.zero);
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      height: 320,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.pie_chart_rounded,
-                size: 20,
-                color: theme.primaryColor,
-              ),
-              const SizedBox(width: 10),
-              const Text(
-                'TOOL UTILIZATION',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                  letterSpacing: 1,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 30),
-          Expanded(
-            child:
-                PieChart(
-                      PieChartData(
-                        sectionsSpace: 4,
-                        centerSpaceRadius: 40,
-                        sections: [
-                          PieChartSectionData(
-                            value: 30,
-                            color: Colors.blueAccent,
-                            title: 'Power BI',
-                            radius: 50,
-                            titleStyle: const TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          PieChartSectionData(
-                            value: 20,
-                            color: Colors.deepPurpleAccent,
-                            title: 'Python',
-                            radius: 45,
-                            titleStyle: const TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          PieChartSectionData(
-                            value: 25,
-                            color: Colors.cyanAccent,
-                            title: 'SQL',
-                            radius: 48,
-                            titleStyle: const TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
-                          ),
-                          PieChartSectionData(
-                            value: 15,
-                            color: Colors.pinkAccent,
-                            title: 'Tableau',
-                            radius: 40,
-                            titleStyle: const TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          PieChartSectionData(
-                            value: 10,
-                            color: Colors.greenAccent,
-                            title: 'Excel',
-                            radius: 35,
-                            titleStyle: const TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                    .animate(onPlay: (c) => c.repeat(reverse: true))
-                    .shimmer(duration: 4.seconds, color: Colors.white24),
-          ),
-        ],
-      ),
-    );
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_handleScroll);
   }
-}
 
-class PulseActivityChart extends StatelessWidget {
-  const PulseActivityChart({super.key});
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _mousePosition.dispose();
+    super.dispose();
+  }
+
+  void _updateMousePos(PointerEvent event) {
+    _mousePosition.value = event.position;
+  }
+
+  void _handleScroll() {
+    // Basic logic to update active nav item based on scroll position
+    // For simplicity, we'll just track if we're at the top, middle, or bottom
+    // A more precise implementation would use RenderBox position
+    final offset = _scrollController.offset;
+    int newIndex = 0;
+    if (offset > 2400) {
+      newIndex = 4; // Contact
+    } else if (offset > 1600) {
+      newIndex = 3; // Projects
+    } else if (offset > 1000) {
+      newIndex = 2; // Skills
+    } else if (offset > 400) {
+      newIndex = 1; // Experience
+    } else {
+      newIndex = 0; // Home
+    }
+
+    if (newIndex != _currentIndex && mounted) {
+      setState(() {
+        _currentIndex = newIndex;
+      });
+    }
+  }
+
+  void _scrollToKey(GlobalKey key) {
+    final context = key.currentContext;
+    if (context != null) {
+      Scrollable.ensureVisible(
+        context,
+        duration: const Duration(milliseconds: 800),
+        curve: Curves.fastOutSlowIn,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      height: 320,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.auto_graph_rounded,
-                    size: 20,
-                    color: theme.colorScheme.secondary,
-                  ),
-                  const SizedBox(width: 10),
-                  const Text(
-                    'AUTOMATED WORKFLOWS',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                ],
-              ),
-              Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.redAccent.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.circle, size: 8, color: Colors.redAccent),
-                        SizedBox(width: 6),
-                        Text(
-                          'LIVE',
-                          style: TextStyle(
-                            color: Colors.redAccent,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                  .animate(onPlay: (c) => c.repeat(reverse: true))
-                  .fade(begin: 0.2, end: 1),
-            ],
-          ),
-          const SizedBox(height: 30),
-          Expanded(
-            child: LineChart(
-              LineChartData(
-                gridData: FlGridData(
-                  show: true,
-                  drawVerticalLine: false,
-                  getDrawingHorizontalLine: (v) => FlLine(
-                    color: Colors.grey.withOpacity(0.1),
-                    strokeWidth: 1,
-                    dashArray: [5, 5],
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isMobile = constraints.maxWidth < 800;
+          return MouseRegion(
+            onHover: _updateMousePos,
+            cursor: isMobile
+                ? SystemMouseCursors.basic
+                : SystemMouseCursors.none,
+            child: Stack(
+              children: [
+                // Background Grid Effect
+                Positioned.fill(
+                  child: Opacity(
+                    opacity: 0.05,
+                    child: CustomPaint(painter: GridPainter()),
                   ),
                 ),
-                titlesData: FlTitlesData(
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 22,
-                      interval: 1,
-                      getTitlesWidget: (v, m) => Text(
-                        'Day ${v.toInt()}',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: Colors.grey.shade500,
-                        ),
+
+                // Main Content
+                SingleChildScrollView(
+                  controller: _scrollController,
+                  child: Column(
+                    children: [
+                      SizedBox(height: 60, key: _homeKey),
+                      ProfileHeader(isMobile: isMobile),
+                      const SizedBox(height: 40),
+                      IntroSection(isMobile: isMobile),
+                      const SizedBox(height: 80),
+                      ExperienceSection(
+                        isMobile: isMobile,
+                        key: _experienceKey,
                       ),
-                    ),
-                  ),
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  topTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  rightTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                ),
-                borderData: FlBorderData(show: false),
-                minX: 0,
-                maxX: 6,
-                minY: 0,
-                maxY: 10,
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: const [
-                      FlSpot(0, 2),
-                      FlSpot(1, 4),
-                      FlSpot(2, 3),
-                      FlSpot(3, 8),
-                      FlSpot(4, 6),
-                      FlSpot(5, 9),
-                      FlSpot(6, 7),
+                      const SizedBox(height: 80),
+                      SkillsSection(isMobile: isMobile, key: _skillsKey),
+                      const SizedBox(height: 80),
+                      const QuoteSection(),
+                      const SizedBox(height: 80),
+                      PremiumProjectsSection(
+                        isMobile: isMobile,
+                        key: _projectsKey,
+                      ),
+                      const SizedBox(height: 80),
+                      ContributionSection(isMobile: isMobile),
+                      const SizedBox(height: 80),
+                      ContactSection(isMobile: isMobile, key: _contactKey),
+                      const SizedBox(height: 100),
+                      FooterSection(isMobile: isMobile),
                     ],
-                    isCurved: true,
-                    curveSmoothness: 0.4,
-                    color: theme.colorScheme.secondary,
-                    barWidth: 4,
-                    isStrokeCapRound: true,
-                    dotData: FlDotData(
-                      show: true,
-                      getDotPainter: (s, p, d, i) => FlDotCirclePainter(
-                        radius: 6,
-                        color: theme.colorScheme.secondary,
-                        strokeWidth: 2,
-                        strokeColor: theme.scaffoldBackgroundColor,
-                      ),
-                    ),
-                    belowBarData: BarAreaData(
-                      show: true,
-                      gradient: LinearGradient(
-                        colors: [
-                          theme.colorScheme.secondary.withOpacity(0.4),
-                          theme.colorScheme.secondary.withOpacity(0.0),
-                        ],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ).animate().fadeIn(duration: 800.ms).slideX(begin: 0.1, end: 0),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ----------------------------------------------------
-// IMAGE PROJECTS GRID WITH HOVER 3D
-// ----------------------------------------------------
-class ImageProjectsGrid extends StatelessWidget {
-  const ImageProjectsGrid({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final projects = [
-      {
-        'name': 'Tata Motors Analysis',
-        'type': 'POWER BI',
-        'img':
-            'https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=2070',
-        'desc': 'Vehicle sales analytics from 2000-2025.',
-      },
-      {
-        'name': 'ABB Stock Time-Series',
-        'type': 'TIME SERIES',
-        'img':
-            'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?q=80&w=2070',
-        'desc': 'Advanced predictive modeling of stock behavior.',
-      },
-      {
-        'name': 'Uber Rides',
-        'type': 'TABLEAU',
-        'img':
-            'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?q=80&w=2070',
-        'desc': 'Mapping global ride cancellations & stats.',
-      },
-      {
-        'name': 'IBM HR Insights',
-        'type': 'DATA WAREHOUSING',
-        'img':
-            'https://images.unsplash.com/photo-1553877522-43269d4ea984?q=80&w=2070',
-        'desc': 'Employee attrition forecasting model.',
-      },
-      {
-        'name': 'GIVEAT System API',
-        'type': 'PYTHON FLASK',
-        'img':
-            'https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?q=80&w=2070',
-        'desc': 'End-to-end backend data handling.',
-      },
-    ];
-
-    bool isMobile = MediaQuery.of(context).size.width < 900;
-
-    return Wrap(
-      spacing: 24,
-      runSpacing: 24,
-      children: projects
-          .map((p) => _InteractiveProjCard(p: p, isMobile: isMobile))
-          .toList(),
-    );
-  }
-}
-
-class _InteractiveProjCard extends StatefulWidget {
-  final Map<String, String> p;
-  final bool isMobile;
-  const _InteractiveProjCard({required this.p, required this.isMobile});
-
-  @override
-  State<_InteractiveProjCard> createState() => _InteractiveProjCardState();
-}
-
-class _InteractiveProjCardState extends State<_InteractiveProjCard> {
-  bool isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return MouseRegion(
-      onEnter: (_) => setState(() => isHovered = true),
-      onExit: (_) => setState(() => isHovered = false),
-      cursor: SystemMouseCursors.click,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        width: widget.isMobile
-            ? double.infinity
-            : (MediaQuery.of(context).size.width - 320 - 80 - 48) / 3,
-        height: 280,
-        constraints: const BoxConstraints(minWidth: 260),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: isHovered
-              ? [
-                  BoxShadow(
-                    color: theme.primaryColor.withOpacity(0.3),
-                    blurRadius: 30,
-                    spreadRadius: 0,
-                    offset: const Offset(0, 10),
-                  ),
-                ]
-              : [],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              // Background Image
-              AnimatedScale(
-                scale: isHovered ? 1.1 : 1.0,
-                duration: const Duration(milliseconds: 600),
-                curve: Curves.easeOutCubic,
-                child: Image.network(
-                  widget.p['img']!,
-                  fit: BoxFit.cover,
-                  errorBuilder: (c, e, s) =>
-                      Container(color: Colors.grey.shade900),
-                ),
-              ),
-              // Gradient Overlay
-              AnimatedOpacity(
-                opacity: isHovered ? 0.9 : 0.7,
-                duration: const Duration(milliseconds: 300),
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.black.withOpacity(0.0),
-                        Colors.black.withOpacity(1.0),
-                      ],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      stops: const [0.3, 1.0],
-                    ),
                   ),
                 ),
-              ),
-              // Content
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
+
+                // Custom Charger Cursor
+                if (!isMobile)
+                  ValueListenableBuilder<Offset>(
+                    valueListenable: _mousePosition,
+                    builder: (context, pos, _) => ChargerCursor(position: pos),
+                  ),
+
+                // Floating Bottom Navigation
+                Positioned(
+                  bottom: 30,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 10,
-                        vertical: 4,
+                        vertical: 8,
                       ),
                       decoration: BoxDecoration(
-                        color: theme.primaryColor,
-                        borderRadius: BorderRadius.circular(8),
+                        color: const Color(0xCC050505),
+                        borderRadius: BorderRadius.circular(40),
+                        border: Border.all(color: Colors.white10),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.5),
+                            blurRadius: 20,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
                       ),
-                      child: Text(
-                        widget.p['type']!,
-                        style: const TextStyle(
-                          color: Colors.black,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1,
-                        ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _navItem(Icons.home_outlined, 0, _homeKey),
+                          _navItem(
+                            Icons.work_outline_rounded,
+                            1,
+                            _experienceKey,
+                          ),
+                          _navItem(Icons.terminal_rounded, 2, _skillsKey),
+                          _navItem(Icons.folder_outlined, 3, _projectsKey),
+                          _navItem(
+                            Icons.alternate_email_rounded,
+                            4,
+                            _contactKey,
+                          ),
+                          Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 8),
+                            height: 20,
+                            width: 1,
+                            color: Colors.white10,
+                          ),
+                          _navSocialItem(
+                            FontAwesomeIcons.github,
+                            'https://github.com/ABY4613',
+                          ),
+                          _navSocialItem(
+                            FontAwesomeIcons.linkedinIn,
+                            'https://linkedin.com/in/aby-babu',
+                          ),
+                          _navSocialItem(
+                            FontAwesomeIcons.xTwitter,
+                            'https://x.com/aby_dot',
+                          ),
+                          _navSocialItem(
+                            FontAwesomeIcons.instagram,
+                            'https://instagram.com/i.abyiii',
+                          ),
+                        ],
                       ),
+                    ).animate().fadeIn(delay: 500.ms).slideY(begin: 1, end: 0),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _navSocialItem(dynamic icon, String url) {
+    return HoverInvert(
+      builder: (context, isHovered, color) {
+        return IconButton(
+          onPressed: () => launchUrl(Uri.parse(url)),
+          icon: _buildIcon(
+            icon,
+            size: 18,
+            color: isHovered ? const Color(0xFFFF0031) : Colors.white38,
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          constraints: const BoxConstraints(),
+        );
+      },
+    );
+  }
+
+  Widget _navItem(IconData icon, int index, GlobalKey key) {
+    bool isActive = _currentIndex == index;
+    return HoverInvert(
+      builder: (context, isHovered, color) {
+        return InkWell(
+          onTap: () => _scrollToKey(key),
+          highlightColor: Colors.transparent,
+          splashColor: Colors.transparent,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            padding: EdgeInsets.symmetric(
+              horizontal: isActive ? 20 : 12,
+              vertical: 10,
+            ),
+            margin: const EdgeInsets.symmetric(horizontal: 4),
+            decoration: BoxDecoration(
+              color: isActive || isHovered
+                  ? Colors.white.withOpacity(0.08)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(30),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  icon,
+                  size: 20,
+                  color: isActive
+                      ? (isHovered ? Colors.white : const Color(0xFFFF0031))
+                      : (isHovered ? const Color(0xFFFF0031) : Colors.white38),
+                ),
+                if (isActive)
+                  Container(
+                    margin: const EdgeInsets.only(top: 4),
+                    width: 4,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: isHovered ? Colors.white : const Color(0xFFFF0031),
+                      shape: BoxShape.circle,
                     ),
-                    const SizedBox(height: 12),
-                    Text(
-                      widget.p['name']!,
-                      style: GoogleFonts.outfit(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
+                  ).animate().scale(),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class ProfileHeader extends StatelessWidget {
+  final bool isMobile;
+  const ProfileHeader({super.key, required this.isMobile});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: isMobile ? 20 : 100),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(30),
+            child: Image.network(
+              'https://api.dicebear.com/7.x/avataaars/png?seed=Aby', // Placeholder for your photo
+              width: 60,
+              height: 60,
+              fit: BoxFit.cover,
+            ),
+          ),
+          const SizedBox(width: 15),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'ABY BABU',
+                  style: GoogleFonts.silkscreen(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  '@aby_dot',
+                  style: GoogleFonts.inter(color: Colors.white38, fontSize: 14),
+                ),
+              ],
+            ),
+          ),
+          if (!isMobile) ...[
+            _headerSocial(
+              FontAwesomeIcons.github,
+              'https://github.com/ABY4613',
+            ),
+            const SizedBox(width: 10),
+            _headerSocial(
+              FontAwesomeIcons.linkedinIn,
+              'https://linkedin.com/in/aby-babu',
+            ),
+            const SizedBox(width: 20),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.white),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.send_rounded, size: 14, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Get in Touch',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
                     ),
-                    const SizedBox(height: 8),
-                    AnimatedOpacity(
-                      opacity: isHovered ? 1.0 : 0.0,
-                      duration: const Duration(milliseconds: 300),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        height: isHovered ? 40 : 0,
-                        child: SingleChildScrollView(
-                          physics: const NeverScrollableScrollPhysics(),
-                          child: Text(
-                            widget.p['desc']!,
-                            style: TextStyle(
-                              color: Colors.grey.shade300,
-                              fontSize: 12,
-                            ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _headerSocial(dynamic icon, String url) {
+    return IconButton(
+      onPressed: () => launchUrl(Uri.parse(url)),
+      icon: _buildIcon(icon, size: 18, color: Colors.white70),
+    );
+  }
+}
+
+class IntroSection extends StatelessWidget {
+  final bool isMobile;
+  const IntroSection({super.key, required this.isMobile});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: isMobile ? 20 : 100),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          RichText(
+            text: TextSpan(
+              style: GoogleFonts.inter(
+                fontSize: isMobile ? 18 : 22,
+                height: 1.5,
+                color: Colors.white70,
+              ),
+              children: [
+                const TextSpan(text: 'Surprise me, a '),
+                TextSpan(
+                  text: 'Mobile Developer',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    decoration: TextDecoration.underline,
+                    decorationColor: Colors.white24,
+                  ),
+                ),
+                const TextSpan(
+                  text:
+                      '. Fancy title, huh? But here\'s the kicker — I\'m not your average ',
+                ),
+                TextSpan(
+                  text: 'code monkey',
+                  style: TextStyle(
+                    fontFamily: GoogleFonts.silkscreen().fontFamily,
+                    color: Colors.white,
+                  ),
+                ),
+                const TextSpan(text: '. I thrive at the intersection of '),
+                TextSpan(
+                  text: 'elegant design',
+                  style: TextStyle(color: const Color(0xFFFF0031)),
+                ),
+                const TextSpan(text: ' and '),
+                TextSpan(
+                  text: 'robust, efficient code',
+                  style: TextStyle(color: const Color(0xFFFF0031)),
+                ),
+                const TextSpan(
+                  text:
+                      '. I\'m passionate about crafting seamless user experiences.',
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 30),
+          Row(
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFF0031),
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Available for projects',
+                style: GoogleFonts.inter(
+                  color: const Color(0xFFFF0031),
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class GridPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white
+      ..strokeWidth = 0.5;
+
+    const gap = 40.0;
+    for (double i = 0; i < size.width; i += gap) {
+      canvas.drawLine(Offset(i, 0), Offset(i, size.height), paint);
+    }
+    for (double i = 0; i < size.height; i += gap) {
+      canvas.drawLine(Offset(0, i), Offset(size.width, i), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// Removed old HeroSection in favor of new ProfileHeader and IntroSection
+
+// Combined AboutSection logic into IntroSection for that design match
+
+class SkillsSection extends StatelessWidget {
+  final bool isMobile;
+  const SkillsSection({super.key, required this.isMobile});
+
+  @override
+  Widget build(BuildContext context) {
+    final List<Map<String, dynamic>> skills = [
+      {'name': 'iOS Development', 'icon': Icons.apple},
+      {'name': 'Android Development', 'icon': Icons.android},
+      {'name': 'Flutter', 'icon': Icons.flutter_dash},
+      {'name': 'React', 'icon': FontAwesomeIcons.react},
+      {'name': 'TypeScript', 'icon': FontAwesomeIcons.terminal},
+      {'name': 'JavaScript', 'icon': FontAwesomeIcons.js},
+      {'name': 'Firebase', 'icon': Icons.local_fire_department},
+      {'name': 'REST APIs', 'icon': Icons.api},
+      {'name': 'Python', 'icon': FontAwesomeIcons.python},
+      {'name': 'Git', 'icon': FontAwesomeIcons.gitAlt},
+    ];
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: isMobile ? 20 : 100),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SectionHeader(title: 'THE KITCHEN'),
+          const SizedBox(height: 10),
+          Text(
+            'My tech stack and tools',
+            style: GoogleFonts.inter(color: Colors.white38, fontSize: 14),
+          ),
+          const SizedBox(height: 30),
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: skills
+                .map((s) => _skillChip(s['name'], s['icon']))
+                .toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _skillChip(String name, dynamic icon) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0A0A0A),
+        border: Border.all(color: Colors.white12),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildIcon(icon, size: 16, color: Colors.white70),
+          const SizedBox(width: 10),
+          Text(
+            name,
+            style: GoogleFonts.inter(fontSize: 13, color: Colors.white),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class ExperienceSection extends StatelessWidget {
+  final bool isMobile;
+  const ExperienceSection({super.key, required this.isMobile});
+
+  @override
+  Widget build(BuildContext context) {
+    final experiences = [
+      {
+        'title': 'iOS Developer',
+        'type': 'Work',
+        'company': 'Tech Solutions',
+        'period': '2024 - Present',
+        'location': 'On-site',
+        'subtitle': 'Full-time',
+      },
+      {
+        'title': 'MOBILE APP DEVELOPER',
+        'type': 'Work',
+        'company': 'Freelance',
+        'period': '2023 - 2024',
+        'location': 'Remote',
+        'subtitle': 'Freelance',
+      },
+      {
+        'title': 'MOBILE DEVELOPMENT INTERN',
+        'type': 'Work',
+        'company': 'Startup Inc',
+        'period': '2023',
+        'location': 'Kerala, India',
+        'subtitle': 'Tech Intern',
+      },
+      {
+        'title': 'MOBILE DEVELOPMENT',
+        'type': 'Education',
+        'company': 'Self Taught',
+        'period': '2022',
+        'location': '',
+        'subtitle': '',
+      },
+    ];
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: isMobile ? 20 : 100),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SectionHeader(title: 'THE JOURNEY'),
+          const SizedBox(height: 40),
+          ...experiences.asMap().entries.map((entry) {
+            final index = entry.key;
+            final exp = entry.value;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 0),
+              child: IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Column(
+                      children: [
+                        Container(
+                          width: 12,
+                          height: 12,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFFF0031),
+                            shape: BoxShape.circle,
                           ),
                         ),
+                        if (index != experiences.length - 1)
+                          Expanded(
+                            child: Container(width: 1, color: Colors.white12),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(width: 20),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                exp['title']!,
+                                style: GoogleFonts.silkscreen(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white12,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  exp['type']!,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              const Spacer(),
+                              const Icon(
+                                Icons.keyboard_arrow_down,
+                                color: Colors.white24,
+                              ),
+                            ],
+                          ),
+                          if (exp['subtitle']!.isNotEmpty)
+                            Text(
+                              exp['subtitle']!,
+                              style: GoogleFonts.inter(
+                                color: Colors.white38,
+                                fontSize: 13,
+                              ),
+                            ),
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              _expInfo(Icons.calendar_today, exp['period']!),
+                              const SizedBox(width: 20),
+                              if (exp['location']!.isNotEmpty)
+                                _expInfo(
+                                  Icons.location_on_outlined,
+                                  exp['location']!,
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 40),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
-            ],
-          ),
+            );
+          }).toList(),
+        ],
+      ),
+    );
+  }
+
+  Widget _expInfo(dynamic icon, String text) {
+    return Row(
+      children: [
+        _buildIcon(icon, size: 14, color: Colors.white24),
+        const SizedBox(width: 5),
+        Text(
+          text,
+          style: GoogleFonts.inter(color: Colors.white24, fontSize: 12),
         ),
+      ],
+    );
+  }
+}
+
+class ProjectsSection extends StatelessWidget {
+  final bool isMobile;
+  const ProjectsSection({super.key, required this.isMobile});
+
+  @override
+  Widget build(BuildContext context) {
+    final projects = [
+      {
+        'num': '01',
+        'name': 'Frusette Salad Delivery',
+        'tech': 'Flutter, Firebase, Maps',
+        'image': 'assets/images/p1.png',
+        'desc':
+            'Complete salad meal subscription and delivery ecosystem including mobile apps and web dashboards.',
+        'links': ['https://admin.frusette.com/'],
+      },
+      {
+        'num': '02',
+        'name': 'Shyns Mart',
+        'tech': 'Flutter, BLoC, Python',
+        'image': 'assets/images/p2.png',
+        'desc':
+            'On-demand grocery and food purchase app with customer and delivery boy modules.',
+        'links': [
+          'https://play.google.com/store/apps/details?id=com.toqse.maliyekkalstore',
+        ],
+      },
+      {
+        'num': '03',
+        'name': '24LAW App',
+        'tech': 'Flutter, Dart, Firebase',
+        'image': 'assets/images/p3.png',
+        'desc':
+            'Legal information app providing real-time court judgments and legal news.',
+        'links': [
+          'https://play.google.com/store/apps/details?id=com.the24law.app',
+        ],
+      },
+    ];
+
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: isMobile ? 20 : 100),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SectionHeader(title: 'FEATURED PROJECTS'),
+          const SizedBox(height: 60),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: isMobile ? 1 : 3,
+              crossAxisSpacing: 30,
+              mainAxisSpacing: 40,
+              childAspectRatio: isMobile ? 0.85 : 0.75,
+            ),
+            itemCount: projects.length,
+            itemBuilder: (context, index) {
+              final proj = projects[index];
+              return _ProjectCard(proj: proj, index: index);
+            },
+          ),
+        ],
       ),
     );
   }
 }
 
-// ----------------------------------------------------
-// CREATIVE TIMELINE COMPONENT
-// ----------------------------------------------------
-class FancyTimelineFeed extends StatelessWidget {
-  const FancyTimelineFeed({super.key});
+class _ProjectCard extends StatelessWidget {
+  final Map<String, dynamic> proj;
+  final int index;
+
+  const _ProjectCard({required this.proj, required this.index});
+
+  @override
+  Widget build(BuildContext context) {
+    return HoverInvert(
+          baseColor: const Color(0xFF0A0A0A),
+          invertColor: const Color(0xFF111111),
+          builder: (context, isHovered, color) {
+            return Container(
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(
+                  color: isHovered
+                      ? const Color(0xFFFF0031).withOpacity(0.5)
+                      : Colors.white12,
+                  width: 1.5,
+                ),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Image Container
+                  Expanded(
+                    flex: 4,
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
+                          child: Image.asset(
+                            proj['image'] as String,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        Positioned.fill(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.transparent,
+                                  color.withOpacity(0.8),
+                                  color,
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          top: 15,
+                          right: 20,
+                          child: Text(
+                            proj['num'] as String,
+                            style: GoogleFonts.silkscreen(
+                              color: Colors.white10,
+                              fontSize: 40,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Content Container
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(25, 0, 25, 25),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          proj['name'] as String,
+                          style: GoogleFonts.inter(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: isHovered
+                                ? const Color(0xFFFF0031)
+                                : Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFF0031).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            proj['tech'] as String,
+                            style: GoogleFonts.silkscreen(
+                              color: const Color(0xFFFF0031),
+                              fontSize: 9,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 15),
+                        Text(
+                          proj['desc'] as String,
+                          style: GoogleFonts.inter(
+                            color: Colors.white54,
+                            fontSize: 13,
+                            height: 1.6,
+                          ),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 20),
+                        Row(
+                          children: [
+                            for (var link in proj['links'] as List)
+                              InkWell(
+                                onTap: () => launchUrl(Uri.parse(link)),
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white10),
+                                  ),
+                                  child: const Icon(
+                                    Icons.arrow_outward_rounded,
+                                    size: 16,
+                                    color: Colors.white70,
+                                  ),
+                                ),
+                              ),
+                            const Spacer(),
+                            if (isHovered)
+                              const Icon(
+                                Icons.keyboard_double_arrow_right_rounded,
+                                color: Color(0xFFFF0031),
+                                size: 16,
+                              ).animate().fadeIn().slideX(begin: -0.5, end: 0),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        )
+        .animate()
+        .fadeIn(delay: (index * 150).ms)
+        .scale(begin: const Offset(0.95, 0.95), end: const Offset(1, 1));
+  }
+}
+
+class EducationSection extends StatelessWidget {
+  final bool isMobile;
+  const EducationSection({super.key, required this.isMobile});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(30),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
-      ),
+      padding: EdgeInsets.symmetric(horizontal: isMobile ? 20 : 100),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(
-                Icons.history_toggle_off_rounded,
-                size: 28,
-                color: Theme.of(context).colorScheme.secondary,
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'PROFESSIONAL HISTORY',
-                style: GoogleFonts.outfit(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
+          const SectionHeader(title: 'EDUCATION'),
           const SizedBox(height: 40),
-          _feedItem(
-            context,
-            'Data Analyst Intern',
-            'Techolas Technologies',
-            'Jul 2025 – Feb 2026',
-            Icons.work_outline_rounded,
-            true,
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(30),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.white12),
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Bachelor of Computer Applications (BCA)',
+                  style: GoogleFonts.inter(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  '2021 – 2024',
+                  style: GoogleFonts.silkscreen(
+                    color: const Color(0xFFFF0031),
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(height: 15),
+                const Text(
+                  'Musaliar College of Arts and Science, Pathanamthitta, Kerala',
+                  style: TextStyle(color: Colors.white70),
+                ),
+                const Text(
+                  'Affiliated to Mahatma Gandhi University, Kottayam',
+                  style: TextStyle(color: Colors.white38),
+                ),
+              ],
+            ),
+          ).animate().fadeIn(),
+        ],
+      ),
+    );
+  }
+}
+
+class QuoteSection extends StatelessWidget {
+  const QuoteSection({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 40),
+      child: Column(
+        children: [
+          Text(
+            '"Code is like humor. When you have to explain it, it\'s bad."',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.silkscreen(
+              fontSize: 24,
+              color: Colors.white,
+              height: 1.5,
+            ),
+          ).animate().fadeIn().scale(),
+          const SizedBox(height: 20),
+          Text('— Cory House', style: GoogleFonts.inter(color: Colors.white38)),
+        ],
+      ),
+    );
+  }
+}
+
+class ContributionSection extends StatelessWidget {
+  final bool isMobile;
+  const ContributionSection({super.key, required this.isMobile});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: isMobile ? 20 : 100),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SectionHeader(title: 'CONTRIBUTION GRAPH'),
+          const SizedBox(height: 15),
+          Text(
+            'A developer\'s journey isn\'t about perfect streaks—it\'s about showing up when it matters.',
+            style: GoogleFonts.inter(
+              color: Colors.white38,
+              fontSize: 13,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+          const SizedBox(height: 30),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.white12),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(children: List.generate(35, (i) => _dotColumn())),
+                ),
+                const SizedBox(height: 15),
+                Row(
+                  children: [
+                    Text(
+                      'Less',
+                      style: GoogleFonts.inter(
+                        fontSize: 10,
+                        color: Colors.white38,
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                    _dot(Colors.white12),
+                    _dot(const Color(0x33FF0031)),
+                    _dot(const Color(0x77FF0031)),
+                    _dot(const Color(0xFFFF0031)),
+                    const SizedBox(width: 5),
+                    Text(
+                      'More',
+                      style: GoogleFonts.inter(
+                        fontSize: 10,
+                        color: Colors.white38,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _feedItem(
-    BuildContext context,
-    String t,
-    String c,
-    String d,
-    IconData i,
-    bool isLast,
-  ) {
-    final theme = Theme.of(context);
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _dotColumn() {
+    return Column(
+      children: List.generate(7, (i) {
+        final rand = (i + DateTime.now().millisecond) % 4;
+        final color = rand == 0
+            ? Colors.white10
+            : rand == 1
+            ? const Color(0x44FF0031)
+            : rand == 2
+            ? const Color(0x99FF0031)
+            : const Color(0xFFFF0031);
+        return _dot(color);
+      }),
+    );
+  }
+
+  Widget _dot(Color color) {
+    return Container(
+      width: 10,
+      height: 10,
+      margin: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(2),
+      ),
+    );
+  }
+}
+
+class ContactSection extends StatefulWidget {
+  final bool isMobile;
+  const ContactSection({super.key, required this.isMobile});
+
+  @override
+  State<ContactSection> createState() => _ContactSectionState();
+}
+
+class _ContactSectionState extends State<ContactSection> {
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _subjectController = TextEditingController();
+  final TextEditingController _messageController = TextEditingController();
+
+  void _sendWhatsAppMessage() async {
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final subject = _subjectController.text.trim();
+    final message = _messageController.text.trim();
+
+    if (name.isEmpty || message.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in your name and message')),
+      );
+      return;
+    }
+
+    final fullMessage =
+        "Hello, my name is $name ($email).\n\nSubject: $subject\n\n$message";
+    final encodedMessage = Uri.encodeComponent(fullMessage);
+    final url = 'https://wa.me/916282554258?text=$encodedMessage';
+
+    if (await canLaunchUrl(Uri.parse(url))) {
+      await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not launch WhatsApp')),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _subjectController.dispose();
+    _messageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: widget.isMobile ? 20 : 100),
+      child: Column(
         children: [
-          Column(
+          Text(
+            'LET\'S WORK TOGETHER',
+            style: GoogleFonts.silkscreen(fontSize: 28),
+          ),
+          const SizedBox(height: 15),
+          Text(
+            'Got a project in mind? Drop me a message and let\'s create something amazing together.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(color: Colors.white38),
+          ),
+          const SizedBox(height: 50),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.secondary.withOpacity(0.15),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: theme.colorScheme.secondary),
-                ),
-                child: Icon(i, color: theme.colorScheme.secondary, size: 20),
-              ),
-              if (!isLast)
-                Expanded(
-                  child: Container(
-                    width: 2,
-                    margin: const EdgeInsets.symmetric(vertical: 8),
-                    color: theme.colorScheme.secondary.withOpacity(0.2),
-                  ),
-                ),
+              _contactInfo(Icons.email_outlined, 'abyb4613@gmail.com'),
+              if (!widget.isMobile) const SizedBox(width: 40),
+              if (!widget.isMobile)
+                _contactInfo(Icons.phone_outlined, '+91 6282554258'),
             ],
           ),
-          const SizedBox(width: 24),
-          Expanded(
+          const SizedBox(height: 40),
+          _buildForm(widget.isMobile),
+        ],
+      ),
+    );
+  }
+
+  Widget _contactInfo(dynamic icon, String text) {
+    return InkWell(
+      onTap: () {
+        final uri = text.contains('@')
+            ? Uri.parse('mailto:$text')
+            : Uri.parse('tel:${text.replaceAll(' ', '')}');
+        launchUrl(uri);
+      },
+      child: Row(
+        children: [
+          _buildIcon(icon, size: 20, color: const Color(0xFFFF0031)),
+          const SizedBox(width: 10),
+          Text(
+            text,
+            style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildForm(bool isMobile) {
+    return Column(
+      children: [
+        if (!isMobile)
+          Row(
+            children: [
+              Expanded(child: _field('NAME', 'Your name', _nameController)),
+              const SizedBox(width: 20),
+              Expanded(
+                child: _field('EMAIL', 'your@email.com', _emailController),
+              ),
+            ],
+          )
+        else ...[
+          _field('NAME', 'Your name', _nameController),
+          const SizedBox(height: 20),
+          _field('EMAIL', 'your@email.com', _emailController),
+        ],
+        const SizedBox(height: 20),
+        _field('SUBJECT', 'What\'s this about?', _subjectController),
+        const SizedBox(height: 20),
+        _field(
+          'MESSAGE',
+          'Tell me about your project...',
+          _messageController,
+          maxLines: 5,
+        ),
+        const SizedBox(height: 30),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: InkWell(
+            onTap: _sendWhatsAppMessage,
+            borderRadius: BorderRadius.circular(8),
             child: Container(
-              padding: const EdgeInsets.only(bottom: 40),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    t,
-                    style: GoogleFonts.outfit(
-                      fontSize: 22,
+                    'SEND MESSAGE',
+                    style: GoogleFonts.silkscreen(
+                      color: Colors.black,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Text(
-                        c,
-                        style: TextStyle(
-                          color: theme.primaryColor,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Icon(Icons.circle, size: 4, color: Colors.grey.shade600),
-                      const SizedBox(width: 12),
-                      Text(
-                        d,
-                        style: TextStyle(
-                          color: Colors.grey.shade500,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
+                  const SizedBox(width: 10),
+                  const Icon(Icons.send, color: Colors.black, size: 16),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _field(
+    String label,
+    String hint,
+    TextEditingController controller, {
+    int maxLines = 1,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.silkscreen(fontSize: 12, color: Colors.white60),
+        ),
+        const SizedBox(height: 10),
+        TextField(
+          controller: controller,
+          maxLines: maxLines,
+          style: const TextStyle(color: Colors.white, fontSize: 14),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: const TextStyle(color: Colors.white12, fontSize: 14),
+            contentPadding: const EdgeInsets.all(16),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.white12),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.white12),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class FooterSection extends StatelessWidget {
+  final bool isMobile;
+  const FooterSection({super.key, required this.isMobile});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 40),
+      child: Column(
+        children: [
+          Text(
+            'Designed and made with ❤️ and ☕',
+            style: GoogleFonts.inter(color: Colors.white38, fontSize: 12),
+          ),
+          const SizedBox(height: 20),
+          InkWell(
+            onTap: () =>
+                launchUrl(Uri.parse('https://buymeacoffee.com/abybabu')),
+            borderRadius: BorderRadius.circular(20),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.yellow[600],
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.coffee, color: Colors.black, size: 18),
+                  const SizedBox(width: 8),
                   Text(
-                    '• Performed deep data cleaning & feature engineering.\n• Developed interactive BI dashboards reducing report time by 40%.\n• Designed and optimized relational databases.',
-                    style: TextStyle(
-                      color: theme.textTheme.bodyMedium?.color?.withOpacity(
-                        0.7,
-                      ),
-                      height: 1.6,
-                      fontSize: 13,
+                    'Buy me a coffee',
+                    style: GoogleFonts.inter(
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
                     ),
                   ),
                 ],
               ),
             ),
           ),
+          const SizedBox(height: 30),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _footerIcon(
+                FontAwesomeIcons.github,
+                'https://github.com/ABY4613',
+              ),
+              _footerIcon(
+                FontAwesomeIcons.linkedinIn,
+                'https://linkedin.com/in/aby-babu',
+              ),
+              _footerIcon(FontAwesomeIcons.xTwitter, 'https://x.com/aby_dot'),
+              _footerIcon(
+                FontAwesomeIcons.instagram,
+                'https://instagram.com/aby_dot',
+              ),
+            ],
+          ),
         ],
       ),
     );
+  }
+
+  Widget _footerIcon(dynamic icon, String url) {
+    return IconButton(
+      onPressed: () => launchUrl(Uri.parse(url)),
+      icon: _buildIcon(icon, size: 18, color: Colors.white24),
+    );
+  }
+}
+
+class SectionHeader extends StatelessWidget {
+  final String title;
+  const SectionHeader({super.key, required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return HoverInvert(
+      builder: (context, isHovered, color) {
+        return Row(
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: isHovered ? Colors.white : const Color(0xFFFF0031),
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 15),
+            Text(
+              title,
+              style: GoogleFonts.silkscreen(
+                fontSize: 20,
+                letterSpacing: 2,
+                color: color,
+              ),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: Container(
+                height: 1,
+                color: isHovered
+                    ? Colors.white.withOpacity(0.3)
+                    : Colors.white12,
+              ),
+            ),
+          ],
+        ).animate().fadeIn().slideX(begin: -0.1, end: 0);
+      },
+    );
+  }
+}
+
+Widget _buildIcon(dynamic icon, {double? size, Color? color}) {
+  if (icon == null) return const SizedBox.shrink();
+
+  // Checking runtimeType string is a reliable workaround for Flutter Web
+  // type-checking issues with FaIconData.
+  if (icon.runtimeType.toString().contains('FaIconData')) {
+    return FaIcon(icon as dynamic, size: size, color: color);
+  }
+  return Icon(icon as IconData?, size: size, color: color);
+}
+
+class PremiumProjectsSection extends StatelessWidget {
+  final bool isMobile;
+  const PremiumProjectsSection({super.key, required this.isMobile});
+
+  @override
+  Widget build(BuildContext context) {
+    final projects = [
+      {
+        'num': '01',
+        'name': 'Frusette Salad',
+        'subtitle': 'SUBSCRIPTION ECOSYSTEM',
+        'tech': ['FLUTTER', 'FIREBASE', 'MAPS API'],
+        'image': 'assets/images/p1.png',
+        'desc':
+            'A comprehensive farm-to-table delivery system with real-time tracking and automated subscriptions.',
+        'link': 'https://admin.frusette.com/',
+      },
+      {
+        'num': '02',
+        'name': 'Shyns Mart',
+        'subtitle': 'GROCERY & LOGISTICS',
+        'tech': ['FLUTTER BLoC', 'REST API', 'PYTHON'],
+        'image': 'assets/images/p2.png',
+        'desc':
+            'Dual-module application for vendors and delivery personnel with intelligent routing.',
+        'link':
+            'https://play.google.com/store/apps/details?id=com.toqse.maliyekkalstore',
+      },
+      {
+        'num': '03',
+        'name': '24LAW',
+        'subtitle': 'LEGAL INTELLIGENCE',
+        'tech': ['FLUTTER', 'FIREBASE', 'NLP'],
+        'image': 'assets/images/p3.png',
+        'desc':
+            'AI-powered legal research tool delivering state-wise court judgments in real-time.',
+        'link':
+            'https://play.google.com/store/apps/details?id=com.the24law.app',
+      },
+    ];
+
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: isMobile ? 20 : 100),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SectionHeader(title: 'FEATURED PROJECTS'),
+          const SizedBox(height: 60),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: isMobile ? 1 : 3,
+              crossAxisSpacing: 30,
+              mainAxisSpacing: 30,
+              childAspectRatio: isMobile ? 0.85 : 0.75,
+            ),
+            itemCount: projects.length,
+            itemBuilder: (context, index) {
+              final proj = projects[index];
+              return _PremiumProjectCard(proj: proj, index: index);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PremiumProjectCard extends StatelessWidget {
+  final Map<String, dynamic> proj;
+  final int index;
+
+  const _PremiumProjectCard({required this.proj, required this.index});
+
+  @override
+  Widget build(BuildContext context) {
+    return HoverInvert(
+      baseColor: const Color(0xFF0F0F0F),
+      invertColor: const Color(0xFF151515),
+      builder: (context, isHovered, color) {
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 400),
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: isHovered
+                  ? const Color(0xFFFF0031).withOpacity(0.6)
+                  : Colors.white12,
+              width: 1.5,
+            ),
+            boxShadow: [
+              if (isHovered)
+                BoxShadow(
+                  color: const Color(0xFFFF0031).withOpacity(0.1),
+                  blurRadius: 40,
+                  spreadRadius: -10,
+                ),
+            ],
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Stack(
+            children: [
+              // Background Number
+              Positioned(
+                bottom: -20,
+                right: -10,
+                child: Opacity(
+                  opacity: 0.03,
+                  child: Text(
+                    proj['num'] as String,
+                    style: GoogleFonts.silkscreen(
+                      fontSize: 120,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Visual Area
+                  Expanded(
+                    flex: 5,
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
+                          child: Image.asset(
+                            proj['image'] as String,
+                            fit: BoxFit.cover,
+                            opacity: AlwaysStoppedAnimation(
+                              isHovered ? 0.9 : 0.7,
+                            ),
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                color: const Color(0xFF1A1A1A),
+                                child: Center(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.image_not_supported_outlined,
+                                        color: Colors.white10,
+                                        size: 40,
+                                      ),
+                                      const SizedBox(height: 10),
+                                      Text(
+                                        'LOADING GRAPHICS...',
+                                        style: GoogleFonts.silkscreen(
+                                          fontSize: 8,
+                                          color: Colors.white10,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        Positioned.fill(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.transparent,
+                                  color.withOpacity(0.2),
+                                  color,
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Info Area
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    proj['name'] as String,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: -0.5,
+                                      color: Colors.white,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  Text(
+                                    proj['subtitle'] as String,
+                                    style: GoogleFonts.silkscreen(
+                                      fontSize: 8,
+                                      color: const Color(0xFFFF0031),
+                                      letterSpacing: 1,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            InkWell(
+                              onTap: () =>
+                                  launchUrl(Uri.parse(proj['link'] as String)),
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: isHovered
+                                      ? const Color(0xFFFF0031)
+                                      : Colors.white.withOpacity(0.05),
+                                ),
+                                child: Icon(
+                                  Icons.arrow_outward_rounded,
+                                  size: 16,
+                                  color: isHovered
+                                      ? Colors.white
+                                      : Colors.white38,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          proj['desc'] as String,
+                          style: GoogleFonts.inter(
+                            color: Colors.white60,
+                            fontSize: 12,
+                            height: 1.4,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 15),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: (proj['tech'] as List<String>)
+                              .map(
+                                (t) => Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.03),
+                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(color: Colors.white12),
+                                  ),
+                                  child: Text(
+                                    t,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 8,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white38,
+                                    ),
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+
+              // Animated Scanline
+              if (isHovered)
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: 2,
+                  child:
+                      Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFF0031).withOpacity(0.5),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFFFF0031),
+                                  blurRadius: 10,
+                                  spreadRadius: 2,
+                                ),
+                              ],
+                            ),
+                          )
+                          .animate(onPlay: (controller) => controller.repeat())
+                          .moveY(
+                            begin: 0,
+                            end: 450,
+                            duration: const Duration(seconds: 2),
+                            curve: Curves.linear,
+                          ),
+                ),
+            ],
+          ),
+        );
+      },
+    ).animate().fadeIn(delay: (index * 200).ms).slideX(begin: 0.1, end: 0);
   }
 }
